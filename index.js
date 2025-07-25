@@ -1,7 +1,7 @@
 function sigmoid(x) {
   return 1 / (1 + Math.exp(-x));
 }
-
+ 
 function sigmoidDerivative(x) {
   let s = sigmoid(x);
   return s * (1 - s);
