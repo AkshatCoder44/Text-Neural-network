@@ -1,48 +1,47 @@
 function sig(x) { return 1 / (1 + Math.exp(-x)); }
 function sigD(x) { let s = sig(x); return s * (1 - s); }
 
-// weight & bias
-let w = Math.random();
-let b = Math.random();
+// ---- INPUTS (same length for simplicity) ----
+let input = "CAT";
+let target = "DOG";
 
-let input = "HELLO";
-let target = "WORLD";
 let lr = 0.1;
-let e = 10000;
+let e  = 20000;
 
-// Encode a word into a number
-function encode(word) {
-  let sum = 0;
-  for (let i = 0; i < word.length; i++) {
-    sum += word.charCodeAt(i);
-  }
-  return sum / (255 * word.length); // normalize to [0,1]
+// encode/decode whole words as arrays of numbers
+function encodeWord(word) {
+  return word.split("").map(ch => ch.charCodeAt(0) / 255);
+}
+function decodeWord(nums) {
+  // clamp to printable ASCII so we don't land on weird symbols
+  return nums.map(num => {
+    let code = Math.round(num * 255);
+    code = Math.max(32, Math.min(126, code));
+    return String.fromCharCode(code);
+  }).join("");
 }
 
-// Decode number back into word approximation
-function decode(num, length = 5) {
-  let avgCode = Math.round(num * 255);
-  let str = "";
-  for (let i = 0; i < length; i++) {
-    str += String.fromCharCode(avgCode);
-  }
-  return str;
-}
+let x = encodeWord(input);
+let y = encodeWord(target);
 
-let x = encode(input);
-let y = encode(target);
+// one neuron per character position: w[j], b[j]
+let w = x.map(() => Math.random());
+let b = x.map(() => Math.random());
 
+// ---- TRAIN ----
 for (let i = 0; i < e; i++) {
-  let z = w * x + b;
-  let output = sig(z);
+  for (let j = 0; j < x.length; j++) {
+    let z = w[j] * x[j] + b[j];
+    let out = sig(z);
 
-  let error = output - y;
-  let dout = error * sigD(z);
+    let err  = out - y[j];
+    let dout = err * sigD(z);
 
-  w -= lr * dout * x;
-  b -= lr * dout;
+    w[j] -= lr * dout * x[j];
+    b[j] -= lr * dout;
+  }
 }
 
-// test: neuron output decoded as text
-let result = sig(w * x + b);
-console.log("Predicted:", decode(result, target.length));
+// ---- TEST ----
+let outArr = x.map((xi, j) => sig(w[j] * xi + b[j]));
+console.log("Predicted:", decodeWord(outArr));
